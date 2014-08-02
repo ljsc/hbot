@@ -14,7 +14,8 @@ cabal-version:       >=1.10
 
 executable hbot
   main-is:             Main.hs
-  build-depends:       base >=4.7 && <4.8,
+  build-depends:       aeson >= 0.8.0.0 && < 0.9.0.0,
+                       base >=4.7 && <4.8,
                        bytestring >= 0.10.4.0 && < 0.11.0.0,
                        http-conduit >= 2.1.4 && < 2.2.0,
                        scotty,
