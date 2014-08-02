@@ -31,6 +31,7 @@ import           System.Environment (getEnv)
 import           Web.Scotty
 
 import           Hbot.ChatNotification
+import           Hbot.MessageEvent (MessageEvent)
 
 authorize :: String -> IO String
 authorize url = do
