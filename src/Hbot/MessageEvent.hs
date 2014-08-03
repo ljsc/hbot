@@ -26,7 +26,8 @@ import           Data.Map.Lazy
 import           Data.Text.Lazy
 import           Data.Time
 
-type URL = String
+type URL   = String
+type Links = Map LinkType URL
 
 data MessageEvent = MessageEvent {
   eventName :: String
@@ -35,10 +36,21 @@ data MessageEvent = MessageEvent {
 , webhookId :: String
 } deriving (Show)
 
+instance FromJSON MessageEvent where
+  parseJSON (Object v) = MessageEvent <$> v .: "event"
+                                      <*> v .: "item"
+                                      <*> v .: "oauth_client_id"
+                                      <*> v .: "webhook_id"
+  parseJSON _ = mzero
+
 data EventItem = EventItem {
   message :: Message
 , room :: Room
 } deriving (Show)
+
+instance FromJSON EventItem where
+  parseJSON (Object v) = EventItem <$> v .: "message" <*> v .: "room"
+  parseJSON _ = mzero
 
 data Message = Message {
   date :: UTCTime
@@ -49,41 +61,66 @@ data Message = Message {
 , msgText :: Text
 } deriving (Show)
 
-data From = From {
-  fromObject :: Object
-, fromString :: String
-} deriving (Show)
+instance FromJSON Message where
+  parseJSON (Object v) = Message <$> v .: "date"
+                                 <*> v .:? "file"
+                                 <*> v .: "from"
+                                 <*> v .: "id"
+                                 <*> v .: "mentions"
+                                 <*> v .: "message"
+  parseJSON _ = mzero
 
-data FromObject = FromObject {
+data From = FromObject FromObject | FromString String | FromNull deriving (Show)
+
+instance FromJSON From where
+  parseJSON v@(Object _) = FromObject <$> parseJSON v
+  parseJSON v@(String _) = FromString <$> parseJSON v
+  parseJSON Null         = return FromNull
+
+data FromObject = FO {
   objectId :: String
-, objectLinks :: [Link]
+, objectLinks :: Links
 , fromMentionName :: String
 , fromFullName :: String
 } deriving (Show)
 
+instance FromJSON FromObject where
+  parseJSON (Object v) = FO <$> v .: "id"
+                            <*> fmap linksFromObject (v .: "links")
+                            <*> v .: "mention_name"
+                            <*> v .: "name"
+  parseJSON _ = mzero
+
 data Room = Room {
   roomId :: String
-, roomLinks :: [Link]
+, roomLinks :: Links
 , name :: String
 } deriving (Show)
 
+instance FromJSON Room where
+  parseJSON (Object v) = Room <$> v .: "id"
+                              <*> fmap linksFromObject (v .: "links")
+                              <*> v .: "name"
+  parseJSON _ = mzero
+
 data Mention = Mention {
   mentionId :: String
-, mentionLinks :: Map LinkType URL
+, mentionLinks :: Links
 , mentionName :: String
 , mentionFullName :: String
 } deriving (Show)
 
 instance FromJSON Mention where
   parseJSON (Object v) = Mention <$> v .: "id"
-                                 <*> fmap (delete InvalidLink . mapKeys parseLinkType)
-                                          (v .: "links")
+                                 <*> fmap linksFromObject (v .: "links")
                                  <*> v .: "mention_name"
                                  <*> v .: "name"
   parseJSON _ = mzero
 
-data Link = Link deriving (Show)
 data LinkType = InvalidLink | SelfLink | MemberLink | WebhookLink deriving (Show, Eq, Ord)
+
+linksFromObject :: Map String URL -> Links
+linksFromObject = delete InvalidLink . mapKeys parseLinkType
 
 parseLinkType :: String -> LinkType
 parseLinkType s | s == "self" = SelfLink
