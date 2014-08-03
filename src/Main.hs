@@ -22,6 +22,7 @@ module Main where
 import           Control.Monad.IO.Class
 import           Data.Aeson (encode)
 import           Data.ByteString.Lazy (ByteString(), toStrict)
+import qualified Data.ByteString.Lazy as L
 import           Data.Text.Lazy.Encoding (decodeUtf8)
 import qualified Data.Text.Lazy as T
 import           Data.Monoid (mconcat, (<>))
@@ -65,4 +66,7 @@ main = scotty 3000 $ do
     msg <- param "msg"
     notifyChat msg
     html $ "Sending message: " <> msg
+  post "/hook" $ do
+    reqBody <- body
+    liftIO $ L.putStr reqBody
 

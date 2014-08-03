@@ -22,9 +22,11 @@ module Hbot.MessageEvent where
 import           Control.Applicative
 import           Control.Monad
 import           Data.Aeson
+import qualified Data.ByteString.Lazy as L
 import           Data.Map.Lazy
 import           Data.Text.Lazy
 import           Data.Time
+import           System.Locale (defaultTimeLocale)
 
 type URL   = String
 type Links = Map LinkType URL
@@ -33,7 +35,7 @@ data MessageEvent = MessageEvent {
   eventName :: String
 , eventItem :: EventItem
 , oauthId :: String
-, webhookId :: String
+, webhookId :: Int
 } deriving (Show)
 
 instance FromJSON MessageEvent where
@@ -61,8 +63,14 @@ data Message = Message {
 , msgText :: Text
 } deriving (Show)
 
+dateWithZone ps = do
+  str <- ps
+  case parseTime defaultTimeLocale "%FT%T%Q%Z" (unpack str) of
+     Just d -> pure d
+     _      -> fail "could not parse ISO-8601 date with zone offset"
+
 instance FromJSON Message where
-  parseJSON (Object v) = Message <$> v .: "date"
+  parseJSON (Object v) = Message <$> dateWithZone (v .: "date")
                                  <*> v .:? "file"
                                  <*> v .: "from"
                                  <*> v .: "id"
@@ -78,7 +86,7 @@ instance FromJSON From where
   parseJSON Null         = return FromNull
 
 data FromObject = FO {
-  objectId :: String
+  objectId :: Int
 , objectLinks :: Links
 , fromMentionName :: String
 , fromFullName :: String
@@ -92,7 +100,7 @@ instance FromJSON FromObject where
   parseJSON _ = mzero
 
 data Room = Room {
-  roomId :: String
+  roomId :: Int
 , roomLinks :: Links
 , name :: String
 } deriving (Show)
