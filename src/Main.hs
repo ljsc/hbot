@@ -39,11 +39,12 @@ authorize url = do
   auth_token <- getEnv "AUTH_TOKEN"
   return $ mconcat [url, "?auth_token=", auth_token]
 
-notifyChat :: T.Text -> ActionM ()
-notifyChat msgText =
+notifyChat :: String -> T.Text -> ActionM ()
+notifyChat room msgText =
   let note = colorMsg Gray . textMsg . defaultNotification $ msgText
   in liftIO $ do
-       url <- authorize "https://api.hipchat.com/v2/room/econify/notification"
+       room <- getEnv "ROOM"
+       url <- authorize $ mconcat ["https://api.hipchat.com/v2/room/" <> room <> "/notification"]
        req0 <- parseUrl url
        let req = req0 {
                    method = "POST"
@@ -59,16 +60,19 @@ getRooms = do
   html $ decodeUtf8 response
 
 main :: IO ()
-main = scotty 3000 $ do
-  get "/" $ html "This is hbot!"
-  get "/rooms" $ getRooms
-  get "/send/:msg" $ do
-    msg <- param "msg"
-    notifyChat msg
-    html $ "Sending message: " <> msg
-  post "/hook" $ do
-    reqBody <- body
-    case decode reqBody :: Maybe MessageEvent of
-      Just e -> notifyChat $ eventMsg e
-      _      -> return ()
+main = do
+  port <- getEnv "PORT"
+  room <- getEnv "ROOM"
+  scotty (read port) $ do
+    get "/" $ html "This is hbot!"
+    get "/rooms" $ getRooms
+    get "/send/:msg" $ do
+      msg <- param "msg"
+      notifyChat room msg
+      html $ "Sending message: " <> msg
+    post "/hook" $ do
+      reqBody <- body
+      case decode reqBody :: Maybe MessageEvent of
+        Just e -> notifyChat room $ eventMsg e
+        _      -> return ()
 
