@@ -16,6 +16,6 @@ To run hbot you need to tell it the OAuth2 token for connecting to the Hipchat
 API.
 
 ```bash
-$ AUTH_TOKEN="abc123xyz" dist/dist-sandbox-*/build/hbot/hbot
+$ AUTH_TOKEN="abc123xyz" ROOM="my-room" PORT=3000 cabal run
 ```
 
