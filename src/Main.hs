@@ -20,7 +20,7 @@
 module Main where
 
 import           Control.Monad.IO.Class
-import           Data.Aeson (encode)
+import           Data.Aeson (encode, decode)
 import           Data.ByteString.Lazy (ByteString(), toStrict)
 import qualified Data.ByteString.Lazy as L
 import           Data.Text.Lazy.Encoding (decodeUtf8)
@@ -32,7 +32,7 @@ import           System.Environment (getEnv)
 import           Web.Scotty
 
 import           Hbot.ChatNotification
-import           Hbot.MessageEvent (MessageEvent)
+import           Hbot.MessageEvent (MessageEvent, eventMsg)
 
 authorize :: String -> IO String
 authorize url = do
@@ -68,5 +68,7 @@ main = scotty 3000 $ do
     html $ "Sending message: " <> msg
   post "/hook" $ do
     reqBody <- body
-    liftIO $ L.putStr reqBody
+    case decode reqBody :: Maybe MessageEvent of
+      Just e -> notifyChat $ eventMsg e
+      _      -> return ()
 

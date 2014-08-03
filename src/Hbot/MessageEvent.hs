@@ -136,3 +136,6 @@ parseLinkType s | s == "self" = SelfLink
                 | s == "webhook" = WebhookLink
                 | otherwise = InvalidLink
 
+eventMsg :: MessageEvent -> Text
+eventMsg = msgText . message . eventItem
+
