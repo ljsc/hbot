@@ -59,20 +59,30 @@ getRooms = do
   response <- liftIO $ authorize "https://api.hipchat.com/v2/room" >>= simpleHttp
   html $ decodeUtf8 response
 
+sendMessage :: String -> ActionM ()
+sendMessage room = do
+  msg <- param "msg"
+  notifyChat room msg
+  html $ "Sending message: " <> msg
+
+handleHook :: String -> ActionM ()
+handleHook room = do
+  reqBody <- body
+  case decode reqBody :: Maybe MessageEvent of
+    Just e -> notifyChat room $ eventMsg e
+    _      -> return ()
+
+app :: Int -> String -> IO ()
+app port room =
+  scotty port $ do
+    get "/"          $ html "This is hbot!"
+    get "/rooms"     $ getRooms
+    get "/send/:msg" $ sendMessage room
+    post "/hook"     $ handleHook room
+
 main :: IO ()
 main = do
   port <- getEnv "PORT"
   room <- getEnv "ROOM"
-  scotty (read port) $ do
-    get "/" $ html "This is hbot!"
-    get "/rooms" $ getRooms
-    get "/send/:msg" $ do
-      msg <- param "msg"
-      notifyChat room msg
-      html $ "Sending message: " <> msg
-    post "/hook" $ do
-      reqBody <- body
-      case decode reqBody :: Maybe MessageEvent of
-        Just e -> notifyChat room $ eventMsg e
-        _      -> return ()
+  app (read port) room
 
