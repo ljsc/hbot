@@ -65,11 +65,20 @@ sendMessage room = do
   notifyChat room msg
   html $ "Sending message: " <> msg
 
+newtype Plugin = Plugin { runPlugin :: T.Text -> IO T.Text }
+
+echoP :: Plugin
+echoP = Plugin $ \msg -> return msg
+
+reverseP :: Plugin
+reverseP = Plugin $ \msg -> return $ T.reverse msg
+
 handleHook :: String -> ActionM ()
 handleHook room = do
   reqBody <- body
   case decode reqBody :: Maybe MessageEvent of
-    Just e -> notifyChat room $ eventMsg e
+    Just e -> do result <- liftIO $ runPlugin echoP (eventMsg e)
+                 notifyChat room result
     _      -> return ()
 
 app :: Int -> String -> IO ()
