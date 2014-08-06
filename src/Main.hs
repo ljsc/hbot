@@ -66,25 +66,30 @@ sendMessage room = do
   notifyChat room msg
   html $ "Sending message: " <> msg
 
-handleHook :: String -> ActionM ()
-handleHook room = do
+handleHook :: String -> String -> ActionM ()
+handleHook room prefix = do
   reqBody <- body
   case decode reqBody :: Maybe MessageEvent of
-    Just e -> do result <- liftIO $ runPlugin echoP (eventMsg e)
-                 notifyChat room result
-    _      -> return ()
+    Nothing -> return ()
+    Just e  -> do let eventText  = eventMsg e
+                      pluginText = case T.stripPrefix (T.pack prefix) eventText of
+                                     Just stripped -> stripped
+                                     Nothing       -> eventText
+                  result <- liftIO $ runPlugin echoP pluginText
+                  notifyChat room result
 
-app :: Int -> String -> IO ()
-app port room =
+app :: Int -> String -> String -> IO ()
+app port room prefix =
   scotty port $ do
     get "/"          $ html "This is hbot!"
     get "/rooms"     $ getRooms
     get "/send/:msg" $ sendMessage room
-    post "/hook"     $ handleHook room
+    post "/hook"     $ handleHook room prefix
 
 main :: IO ()
 main = do
-  port <- getEnv "PORT"
-  room <- getEnv "ROOM"
-  app (read port) room
+  port   <- getEnv "PORT"
+  room   <- getEnv "ROOM"
+  prefix <- getEnv "PREFIX"
+  app (read port) room prefix
 
