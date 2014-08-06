@@ -33,6 +33,7 @@ import           Web.Scotty
 
 import           Hbot.ChatNotification
 import           Hbot.MessageEvent (MessageEvent, eventMsg)
+import           Hbot.Plugins
 
 authorize :: String -> IO String
 authorize url = do
@@ -64,14 +65,6 @@ sendMessage room = do
   msg <- param "msg"
   notifyChat room msg
   html $ "Sending message: " <> msg
-
-newtype Plugin = Plugin { runPlugin :: T.Text -> IO T.Text }
-
-echoP :: Plugin
-echoP = Plugin $ \msg -> return msg
-
-reverseP :: Plugin
-reverseP = Plugin $ \msg -> return $ T.reverse msg
 
 handleHook :: String -> ActionM ()
 handleHook room = do
