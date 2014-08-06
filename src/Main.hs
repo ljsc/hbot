@@ -20,6 +20,7 @@
 module Main where
 
 --------------------------------------------------------------------------------
+import           Control.Applicative       ( (<$>), (<*>) )
 import           Control.Monad.IO.Class
 import           Data.Aeson                ( encode, decode )
 import           Data.ByteString.Lazy      ( ByteString(), toStrict )
@@ -40,6 +41,12 @@ import           Hbot.MessageEvent         ( MessageEvent, eventMsg )
 import           Hbot.Plugins
 
 --------------------------------------------------------------------------------
+data AppParams = AppParams
+    { port   :: !Int    -- port to run http server on
+    , room   :: !String -- hipchat room for bot to hangout in
+    , prefix :: !String -- line prefix for messages bot should respond to
+    }
+
 authorize :: String -> IO String
 authorize url = do
     auth_token <- getEnv "AUTH_TOKEN"
@@ -68,14 +75,14 @@ getRooms = do
     response <- liftIO $ authorize "https://api.hipchat.com/v2/room" >>= simpleHttp
     html $ decodeUtf8 response
 
-sendMessage :: String -> ActionM ()
-sendMessage room = do
+sendMessage :: AppParams -> ActionM ()
+sendMessage (AppParams {room=room}) = do
     msg <- param "msg"
     notifyChat room msg
     html $ "Sending message: " <> msg
 
-handleHook :: String -> String -> ActionM ()
-handleHook room prefix = do
+handleHook :: AppParams -> ActionM ()
+handleHook (AppParams {room=room,prefix=prefix}) = do
     reqBody <- body
     case decode reqBody :: Maybe MessageEvent of
         Nothing -> return ()
@@ -87,18 +94,18 @@ handleHook room prefix = do
                       notifyChat room result
 
 --------------------------------------------------------------------------------
-app :: Int -> String -> String -> IO ()
-app port room prefix =
+app :: AppParams -> IO ()
+app params@(AppParams {port=port}) =
     scotty port $ do
         get "/"          $ html "This is hbot!"
         get "/rooms"     $ getRooms
-        get "/send/:msg" $ sendMessage room
-        post "/hook"     $ handleHook room prefix
+        get "/send/:msg" $ sendMessage params
+        post "/hook"     $ handleHook params
 
 main :: IO ()
-main = do
-    port   <- getEnv "PORT"
-    room   <- getEnv "ROOM"
-    prefix <- getEnv "PREFIX"
-    app (read port) room prefix
+main = app =<< params
+  where
+    params = AppParams <$> fmap read (getEnv "PORT")
+                       <*> getEnv "ROOM"
+                       <*> getEnv "PREFIX"
 
