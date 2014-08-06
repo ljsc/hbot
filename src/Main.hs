@@ -19,77 +19,86 @@
 
 module Main where
 
+--------------------------------------------------------------------------------
 import           Control.Monad.IO.Class
-import           Data.Aeson (encode, decode)
-import           Data.ByteString.Lazy (ByteString(), toStrict)
-import qualified Data.ByteString.Lazy as L
-import           Data.Text.Lazy.Encoding (decodeUtf8)
-import qualified Data.Text.Lazy as T
-import           Data.Monoid (mconcat, (<>))
-import           Network.HTTP.Conduit ( simpleHttp, http, parseUrl, method, requestBody
-                                      , requestHeaders, withManager, RequestBody(RequestBodyBS))
-import           System.Environment (getEnv)
+import           Data.Aeson                ( encode, decode )
+import           Data.ByteString.Lazy      ( ByteString(), toStrict )
+import qualified Data.ByteString.Lazy      as L
+import           Data.Text.Lazy.Encoding   ( decodeUtf8 )
+import qualified Data.Text.Lazy            as T
+import           Data.Monoid               ( mconcat, (<>) )
+import           Network.HTTP.Conduit      ( simpleHttp, http, parseUrl, method
+                                           , requestBody , requestHeaders
+                                           , withManager
+                                           , RequestBody(RequestBodyBS) )
+import           System.Environment        ( getEnv )
 import           Web.Scotty
 
+--------------------------------------------------------------------------------
 import           Hbot.ChatNotification
-import           Hbot.MessageEvent (MessageEvent, eventMsg)
+import           Hbot.MessageEvent         ( MessageEvent, eventMsg )
 import           Hbot.Plugins
 
+--------------------------------------------------------------------------------
 authorize :: String -> IO String
 authorize url = do
-  auth_token <- getEnv "AUTH_TOKEN"
-  return $ mconcat [url, "?auth_token=", auth_token]
+    auth_token <- getEnv "AUTH_TOKEN"
+    return $ mconcat [url, "?auth_token=", auth_token]
 
 notifyChat :: String -> T.Text -> ActionM ()
 notifyChat room msgText =
-  let note = colorMsg Gray . textMsg . defaultNotification $ msgText
-  in liftIO $ do
-       room <- getEnv "ROOM"
-       url <- authorize $ mconcat ["https://api.hipchat.com/v2/room/" <> room <> "/notification"]
-       req0 <- parseUrl url
-       let req = req0 {
-                   method = "POST"
-                 , requestHeaders = [("Content-Type", "application/json")]
-                 , requestBody = RequestBodyBS . toStrict . encode $ note
-                 }
-       withManager $ \manager -> http req manager
-       return ()
+    let note = colorMsg Gray . textMsg . defaultNotification $ msgText
+    in liftIO $ do
+         room <- getEnv "ROOM"
+         url <- authorize $ mconcat [ "https://api.hipchat.com/v2/room/"
+                                    , room
+                                    , "/notification"
+                                    ]
+         req0 <- parseUrl url
+         let req = req0 {
+                     method = "POST"
+                   , requestHeaders = [("Content-Type", "application/json")]
+                   , requestBody = RequestBodyBS . toStrict . encode $ note
+                   }
+         withManager $ \manager -> http req manager
+         return ()
 
 getRooms :: ActionM ()
 getRooms = do
-  response <- liftIO $ authorize "https://api.hipchat.com/v2/room" >>= simpleHttp
-  html $ decodeUtf8 response
+    response <- liftIO $ authorize "https://api.hipchat.com/v2/room" >>= simpleHttp
+    html $ decodeUtf8 response
 
 sendMessage :: String -> ActionM ()
 sendMessage room = do
-  msg <- param "msg"
-  notifyChat room msg
-  html $ "Sending message: " <> msg
+    msg <- param "msg"
+    notifyChat room msg
+    html $ "Sending message: " <> msg
 
 handleHook :: String -> String -> ActionM ()
 handleHook room prefix = do
-  reqBody <- body
-  case decode reqBody :: Maybe MessageEvent of
-    Nothing -> return ()
-    Just e  -> do let eventText  = eventMsg e
-                      pluginText = case T.stripPrefix (T.pack prefix) eventText of
-                                     Just stripped -> stripped
-                                     Nothing       -> eventText
-                  result <- liftIO $ runPlugin echoP pluginText
-                  notifyChat room result
+    reqBody <- body
+    case decode reqBody :: Maybe MessageEvent of
+        Nothing -> return ()
+        Just e  -> do let eventText  = eventMsg e
+                          pluginText = case T.stripPrefix (T.pack prefix) eventText of
+                                         Just stripped -> stripped
+                                         Nothing       -> eventText
+                      result <- liftIO $ runPlugin echoP pluginText
+                      notifyChat room result
 
+--------------------------------------------------------------------------------
 app :: Int -> String -> String -> IO ()
 app port room prefix =
-  scotty port $ do
-    get "/"          $ html "This is hbot!"
-    get "/rooms"     $ getRooms
-    get "/send/:msg" $ sendMessage room
-    post "/hook"     $ handleHook room prefix
+    scotty port $ do
+        get "/"          $ html "This is hbot!"
+        get "/rooms"     $ getRooms
+        get "/send/:msg" $ sendMessage room
+        post "/hook"     $ handleHook room prefix
 
 main :: IO ()
 main = do
-  port   <- getEnv "PORT"
-  room   <- getEnv "ROOM"
-  prefix <- getEnv "PREFIX"
-  app (read port) room prefix
+    port   <- getEnv "PORT"
+    room   <- getEnv "ROOM"
+    prefix <- getEnv "PREFIX"
+    app (read port) room prefix
 
