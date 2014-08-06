@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ViewPatterns #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -85,13 +85,14 @@ handleHook :: AppParams -> ActionM ()
 handleHook (AppParams {room=room,prefix=prefix}) = do
     reqBody <- body
     case decode reqBody :: Maybe MessageEvent of
+        Just event -> do
+            result <- liftIO $ runPlugin echoP $ textForPlugin event
+            notifyChat room result
         Nothing -> return ()
-        Just e  -> do let eventText  = eventMsg e
-                          pluginText = case T.stripPrefix (T.pack prefix) eventText of
-                                         Just stripped -> stripped
-                                         Nothing       -> eventText
-                      result <- liftIO $ runPlugin echoP pluginText
-                      notifyChat room result
+  where
+    textForPlugin = stripPrefix (T.pack prefix) . eventMsg
+    stripPrefix prefix (T.stripPrefix prefix -> Just stripped) = stripped
+    stripPrefix _      fullText                                = fullText
 
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()
