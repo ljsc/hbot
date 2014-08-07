@@ -52,11 +52,10 @@ authorize url = do
     auth_token <- getEnv "AUTH_TOKEN"
     return $ mconcat [url, "?auth_token=", auth_token]
 
-notifyChat :: String -> T.Text -> ActionM ()
-notifyChat room msgText =
+notifyChat :: AppParams -> T.Text -> ActionM ()
+notifyChat (AppParams {room}) msgText =
     let note = colorMsg Gray . textMsg . defaultNotification $ msgText
     in liftIO $ do
-         room <- getEnv "ROOM"
          url <- authorize $ mconcat [ "https://api.hipchat.com/v2/room/"
                                     , room
                                     , "/notification"
@@ -76,18 +75,18 @@ getRooms = do
     html $ decodeUtf8 response
 
 sendMessage :: AppParams -> ActionM ()
-sendMessage (AppParams {room}) = do
+sendMessage appParams = do
     msg <- param "msg"
-    notifyChat room msg
+    notifyChat appParams msg
     html $ "Sending message: " <> msg
 
 handleHook :: AppParams -> ActionM ()
-handleHook (AppParams {room,prefix}) = do
+handleHook appParams@(AppParams {prefix}) = do
     reqBody <- body
     case decode reqBody :: Maybe MessageEvent of
         Just event -> do
             result <- liftIO $ runPlugin echoP $ textForPlugin event
-            notifyChat room result
+            notifyChat appParams result
         Nothing -> return ()
   where
     textForPlugin = stripPrefix (T.pack prefix) . eventMsg
