@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, ViewPatterns #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -76,13 +76,13 @@ getRooms = do
     html $ decodeUtf8 response
 
 sendMessage :: AppParams -> ActionM ()
-sendMessage (AppParams {room=room}) = do
+sendMessage (AppParams {room}) = do
     msg <- param "msg"
     notifyChat room msg
     html $ "Sending message: " <> msg
 
 handleHook :: AppParams -> ActionM ()
-handleHook (AppParams {room=room,prefix=prefix}) = do
+handleHook (AppParams {room,prefix}) = do
     reqBody <- body
     case decode reqBody :: Maybe MessageEvent of
         Just event -> do
@@ -96,7 +96,7 @@ handleHook (AppParams {room=room,prefix=prefix}) = do
 
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()
-app params@(AppParams {port=port}) =
+app params@(AppParams {port}) =
     scotty port $ do
         get "/"          $ html "This is hbot!"
         get "/rooms"     $ getRooms
