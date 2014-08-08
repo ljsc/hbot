@@ -39,6 +39,7 @@ import           Web.Scotty
 import           Hbot.ChatNotification
 import           Hbot.MessageEvent         ( MessageEvent, eventMsg )
 import           Hbot.Plugins
+import           Hbot.MsgParser
 
 --------------------------------------------------------------------------------
 data AppParams = AppParams
@@ -89,9 +90,7 @@ handleHook appParams@(AppParams {prefix}) = do
             notifyChat appParams result
         Nothing -> return ()
   where
-    textForPlugin = stripPrefix (T.pack prefix) . eventMsg
-    stripPrefix prefix (T.stripPrefix prefix -> Just stripped) = stripped
-    stripPrefix _      fullText                                = fullText
+    textForPlugin = trimMsg (T.pack prefix) . eventMsg
 
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()
