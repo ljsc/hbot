@@ -1,4 +1,5 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, NamedFieldPuns, OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE NamedFieldPuns    #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -101,10 +102,10 @@ app params@(AppParams {port}) = scottyT port readParams readParams routes
 
 routes :: BotSM ()
 routes = do
-    get "/"          $ html "This is hbot!"
-    get "/rooms"     $ getRooms
-    get "/send/:msg" $ sendMessage
-    post "/hook"     $ handleHook
+    get "/" $ html "This is hbot!"
+    get "/rooms" getRooms
+    get "/send/:msg" sendMessage
+    post "/hook" handleHook
 
 main :: IO ()
 main = app =<< params
