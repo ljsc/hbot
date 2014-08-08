@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, NamedFieldPuns, OverloadedStrings, ViewPatterns #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -20,8 +20,10 @@
 module Main where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative       ( (<$>), (<*>) )
+import           Control.Applicative       ( Applicative, (<$>), (<*>) )
 import           Control.Monad.IO.Class
+import           Control.Monad.Reader      ( asks, ReaderT, runReaderT )
+import           Control.Monad.Trans       ( lift )
 import           Data.Aeson                ( encode, decode )
 import           Data.ByteString.Lazy      ( ByteString(), toStrict )
 import qualified Data.ByteString.Lazy      as L
@@ -33,7 +35,7 @@ import           Network.HTTP.Conduit      ( simpleHttp, http, parseUrl, method
                                            , withManager
                                            , RequestBody(RequestBodyBS) )
 import           System.Environment        ( getEnv )
-import           Web.Scotty
+import           Web.Scotty.Trans
 
 --------------------------------------------------------------------------------
 import           Hbot.ChatNotification
@@ -48,58 +50,61 @@ data AppParams = AppParams
     , prefix :: !String -- line prefix for messages bot should respond to
     }
 
+type BotSM = ScottyT T.Text (ReaderT AppParams IO)
+type BotAM = ActionT T.Text (ReaderT AppParams IO)
+
 authorize :: String -> IO String
 authorize url = do
     auth_token <- getEnv "AUTH_TOKEN"
     return $ mconcat [url, "?auth_token=", auth_token]
 
-notifyChat :: AppParams -> T.Text -> ActionM ()
-notifyChat (AppParams {room}) msgText =
+notifyChat :: T.Text -> BotAM ()
+notifyChat msgText = do
+    r <- lift $ asks room
+    url <- liftIO $ authorize
+                  $ mconcat ["https://api.hipchat.com/v2/room/", r, "/notification" ]
+    req0 <- liftIO $ parseUrl url
     let note = colorMsg Gray . textMsg . defaultNotification $ msgText
-    in liftIO $ do
-         url <- authorize $ mconcat [ "https://api.hipchat.com/v2/room/"
-                                    , room
-                                    , "/notification"
-                                    ]
-         req0 <- parseUrl url
-         let req = req0 {
-                     method = "POST"
-                   , requestHeaders = [("Content-Type", "application/json")]
-                   , requestBody = RequestBodyBS . toStrict . encode $ note
-                   }
-         withManager $ \manager -> http req manager
-         return ()
+        req  = req0 { method = "POST"
+                    , requestHeaders = [("Content-Type", "application/json")]
+                    , requestBody = RequestBodyBS . toStrict . encode $ note
+                    }
+    liftIO $ withManager $ \manager -> http req manager
+    return ()
 
-getRooms :: ActionM ()
+getRooms :: BotAM ()
 getRooms = do
     response <- liftIO $ authorize "https://api.hipchat.com/v2/room" >>= simpleHttp
     html $ decodeUtf8 response
 
-sendMessage :: AppParams -> ActionM ()
-sendMessage appParams = do
+sendMessage :: BotAM ()
+sendMessage = do
     msg <- param "msg"
-    notifyChat appParams msg
+    notifyChat msg
     html $ "Sending message: " <> msg
 
-handleHook :: AppParams -> ActionM ()
-handleHook appParams@(AppParams {prefix}) = do
+handleHook :: BotAM ()
+handleHook  = do
+    pre <- lift $ asks prefix
     reqBody <- body
+    let textForPlugin = trimMsg (T.pack pre) . eventMsg
     case decode reqBody :: Maybe MessageEvent of
         Just event -> do
             result <- liftIO $ runPlugin echoP $ textForPlugin event
-            notifyChat appParams result
+            notifyChat result
         Nothing -> return ()
-  where
-    textForPlugin = trimMsg (T.pack prefix) . eventMsg
 
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()
-app params@(AppParams {port}) =
-    scotty port $ do
-        get "/"          $ html "This is hbot!"
-        get "/rooms"     $ getRooms
-        get "/send/:msg" $ sendMessage params
-        post "/hook"     $ handleHook params
+app params@(AppParams {port}) = scottyT port readParams readParams routes
+  where readParams reader = runReaderT reader params
+
+routes :: BotSM ()
+routes = do
+    get "/"          $ html "This is hbot!"
+    get "/rooms"     $ getRooms
+    get "/send/:msg" $ sendMessage
+    post "/hook"     $ handleHook
 
 main :: IO ()
 main = app =<< params
