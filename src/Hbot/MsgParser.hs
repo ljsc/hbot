@@ -23,7 +23,6 @@ import Control.Applicative hiding (many)
 import Data.Text.Lazy
 import Text.Parsec
 import Text.Parsec.Text.Lazy
-import Text.Parsec.Char
 
 --------------------------------------------------------------------------------
 trimMsg :: Text -> Text -> Text

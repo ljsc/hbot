@@ -22,7 +22,7 @@ module Hbot.MessageEvent where
 import           Control.Applicative
 import           Control.Monad
 import           Data.Aeson
-import qualified Data.ByteString.Lazy as L
+import           Data.Aeson.Types (Parser)
 import           Data.Map.Lazy
 import           Data.Text.Lazy
 import           Data.Time
@@ -63,6 +63,7 @@ data Message = Message {
 , msgText :: Text
 } deriving (Show)
 
+dateWithZone :: Parser Text -> Parser UTCTime
 dateWithZone ps = do
   str <- ps
   case parseTime defaultTimeLocale "%FT%T%Q%Z" (unpack str) of
@@ -84,6 +85,7 @@ instance FromJSON From where
   parseJSON v@(Object _) = FromObject <$> parseJSON v
   parseJSON v@(String _) = FromString <$> parseJSON v
   parseJSON Null         = return FromNull
+  parseJSON _            = mzero
 
 data FromObject = FO {
   objectId :: Int

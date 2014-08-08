@@ -21,13 +21,13 @@
 module Main where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative       ( Applicative, (<$>), (<*>) )
+import           Control.Applicative       ( (<$>), (<*>) )
+import           Control.Monad             ( void )
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader      ( asks, ReaderT, runReaderT )
 import           Control.Monad.Trans       ( lift )
 import           Data.Aeson                ( encode, decode )
-import           Data.ByteString.Lazy      ( ByteString(), toStrict )
-import qualified Data.ByteString.Lazy      as L
+import           Data.ByteString.Lazy      ( toStrict )
 import           Data.Text.Lazy.Encoding   ( decodeUtf8 )
 import qualified Data.Text.Lazy            as T
 import           Data.Monoid               ( mconcat, (<>) )
@@ -70,8 +70,7 @@ notifyChat msgText = do
                     , requestHeaders = [("Content-Type", "application/json")]
                     , requestBody = RequestBodyBS . toStrict . encode $ note
                     }
-    liftIO $ withManager $ \manager -> http req manager
-    return ()
+    void $ liftIO $ withManager $ \manager -> http req manager
 
 getRooms :: BotAM ()
 getRooms = do
@@ -97,8 +96,8 @@ handleHook  = do
 
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()
-app params@(AppParams {port}) = scottyT port readParams readParams routes
-  where readParams reader = runReaderT reader params
+app ps@(AppParams {port}) = scottyT port readParams readParams routes
+  where readParams reader = runReaderT reader ps
 
 routes :: BotSM ()
 routes = do
@@ -108,9 +107,9 @@ routes = do
     post "/hook" handleHook
 
 main :: IO ()
-main = app =<< params
+main = app =<< ps
   where
-    params = AppParams <$> fmap read (getEnv "PORT")
-                       <*> getEnv "ROOM"
-                       <*> getEnv "PREFIX"
+    ps = AppParams <$> fmap read (getEnv "PORT")
+                   <*> getEnv "ROOM"
+                   <*> getEnv "PREFIX"
 
