@@ -92,9 +92,15 @@ handleHook  = do
             parseMsg (T.pack pre) . eventMsg $ event
     case botCommand of
         Just command -> do
-            result <- liftIO $ runPlugin echoP command
+            result <- liftIO $ runPlugin plugins command
             notifyChat result
         Nothing -> return ()
+
+plugins :: Plugin
+plugins = dispatch $
+    [ ("echo", echoP)
+    , ("reverse", reverseP)
+    ]
 
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()

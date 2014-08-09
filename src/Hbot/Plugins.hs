@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -25,11 +26,15 @@ import Hbot.MsgParser
 newtype Plugin = Plugin { runPlugin :: BotCommand -> IO T.Text }
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
-dispatch _table = echoP
+dispatch table = Plugin $ \command ->
+    let d []     = return ""
+        d ((name, plugin):rs) | name == pluginName command = runPlugin plugin command
+                              | otherwise                  = d rs
+    in d table
 
 echoP :: Plugin
-echoP = Plugin $ \msg -> return (messageText msg)
+echoP = Plugin $ \command -> return (messageText command)
 
 reverseP :: Plugin
-reverseP = Plugin $ \msg -> return $ T.reverse (messageText msg)
+reverseP = Plugin $ \command -> return $ T.reverse (messageText command)
 
