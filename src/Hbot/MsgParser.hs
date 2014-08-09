@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Hbot.MsgParser where
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -17,24 +16,45 @@ module Hbot.MsgParser where
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
+module Hbot.MsgParser
+    ( parseMsg
+    , BotCommand()
+    , pluginName
+    , messageText
+    ) where
 
 --------------------------------------------------------------------------------
-import Control.Applicative hiding (many)
+import Control.Applicative hiding (many, (<|>))
 import Data.Text.Lazy
 import Text.Parsec
 import Text.Parsec.Text.Lazy
 
 --------------------------------------------------------------------------------
-trimMsg :: Text -> Text -> Text
-trimMsg prefix t =
-    case parse (prefixParser prefix) "" t of
-        Left _    -> t
-        Right res -> res
+data BotCommand = BotCommand
+    { pluginName :: Text
+    , messageText :: Text
+    } deriving (Show)
 
-prefixParser :: Text -> Parser Text
-prefixParser prefix = ignoreSpaces *> thePrefix *> ignoreSpaces *> theRest
-  where
-    ignoreSpaces = skipMany space
-    thePrefix    = string $ unpack prefix
-    theRest      = pack <$> many anyChar
+parseMsg :: Text -> Text -> Maybe BotCommand
+parseMsg p t =
+    case parse (prefixParser p) "" t of
+        Left _    -> Nothing
+        Right res -> Just res
+
+prefixParser :: Text -> Parser BotCommand
+prefixParser p =
+    BotCommand <$> (skipSpaces *> prefix p *> skipSpaces *> theCommand <* skipSpaces)
+               <*> theRest
+
+skipSpaces :: Parser ()
+skipSpaces = skipMany space
+
+prefix :: Text -> Parser String
+prefix = string . unpack
+
+theCommand :: Parser Text
+theCommand = pack <$> many alphaNum
+
+theRest :: Parser Text
+theRest = pack <$> many anyChar
 

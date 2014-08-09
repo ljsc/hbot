@@ -87,7 +87,7 @@ handleHook :: BotAM ()
 handleHook  = do
     pre <- lift $ asks prefix
     reqBody <- body
-    let textForPlugin = trimMsg (T.pack pre) . eventMsg
+    let textForPlugin = maybe "" messageText . parseMsg (T.pack pre) . eventMsg
     case decode reqBody :: Maybe MessageEvent of
         Just event -> do
             result <- liftIO $ runPlugin echoP $ textForPlugin event
