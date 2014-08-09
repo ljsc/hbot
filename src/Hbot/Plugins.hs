@@ -19,6 +19,7 @@
 
 module Hbot.Plugins where
 
+import Data.Monoid ((<>))
 import qualified Data.Text.Lazy as T
 
 import Hbot.MsgParser
@@ -27,14 +28,20 @@ newtype Plugin = Plugin { runPlugin :: BotCommand -> IO T.Text }
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
 dispatch table = Plugin $ \command ->
-    let d []     = return ""
+    let d []                                               = listCommands table
         d ((name, plugin):rs) | name == pluginName command = runPlugin plugin command
                               | otherwise                  = d rs
     in d table
 
+listCommands :: [(T.Text, Plugin)] -> IO T.Text
+listCommands table = return . ("Available commands: " <>) . T.intercalate ", " $ map fst table
+
+textPlugin :: (T.Text -> T.Text) -> Plugin
+textPlugin f = Plugin $ \command -> return $ f (messageText command)
+
 echoP :: Plugin
-echoP = Plugin $ \command -> return (messageText command)
+echoP = textPlugin id
 
 reverseP :: Plugin
-reverseP = Plugin $ \command -> return $ T.reverse (messageText command)
+reverseP = textPlugin T.reverse
 
