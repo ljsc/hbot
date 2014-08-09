@@ -20,11 +20,16 @@ module Hbot.Plugins where
 
 import qualified Data.Text.Lazy as T
 
-newtype Plugin = Plugin { runPlugin :: T.Text -> IO T.Text }
+import Hbot.MsgParser
+
+newtype Plugin = Plugin { runPlugin :: BotCommand -> IO T.Text }
+
+dispatch :: [(T.Text, Plugin)] -> Plugin
+dispatch _table = echoP
 
 echoP :: Plugin
-echoP = Plugin $ \msg -> return msg
+echoP = Plugin $ \msg -> return (messageText msg)
 
 reverseP :: Plugin
-reverseP = Plugin $ \msg -> return $ T.reverse msg
+reverseP = Plugin $ \msg -> return $ T.reverse (messageText msg)
 
