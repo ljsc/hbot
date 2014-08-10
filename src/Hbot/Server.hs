@@ -18,10 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Main where
+module Hbot.Server where
 
 --------------------------------------------------------------------------------
-import           Control.Applicative       ( (<$>), (<*>) )
 import           Control.Monad             ( void )
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader      ( asks, ReaderT, runReaderT )
@@ -113,11 +112,4 @@ routes = do
     get "/rooms" getRooms
     get "/send/:msg" sendMessage
     post "/hook" handleHook
-
-main :: IO ()
-main = app =<< ps
-  where
-    ps = AppParams <$> fmap read (getEnv "PORT")
-                   <*> getEnv "ROOM"
-                   <*> getEnv "PREFIX"
 
