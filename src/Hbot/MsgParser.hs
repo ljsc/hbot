@@ -21,6 +21,7 @@ module Hbot.MsgParser
     , BotCommand()
     , pluginName
     , messageText
+    , prefixParser
     ) where
 
 --------------------------------------------------------------------------------
