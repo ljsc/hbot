@@ -31,9 +31,9 @@ import           Data.Text.Lazy.Encoding   ( decodeUtf8 )
 import qualified Data.Text.Lazy            as T
 import           Data.Monoid               ( mconcat, (<>) )
 import           Network.HTTP.Conduit      ( simpleHttp, http, parseUrl, method
-                                           , requestBody , requestHeaders
+                                           , requestBody, requestHeaders
                                            , withManager
-                                           , RequestBody(RequestBodyBS) )
+                                           , Request, RequestBody(RequestBodyBS) )
 import           System.Environment        ( getEnv )
 import           Web.Scotty.Trans
 
@@ -53,54 +53,6 @@ data AppParams = AppParams
 type BotSM = ScottyT T.Text (ReaderT AppParams IO)
 type BotAM = ActionT T.Text (ReaderT AppParams IO)
 
-authorize :: String -> IO String
-authorize url = do
-    auth_token <- getEnv "AUTH_TOKEN"
-    return $ mconcat [url, "?auth_token=", auth_token]
-
-notifyChat :: T.Text -> BotAM ()
-notifyChat msgText = do
-    r <- lift $ asks room
-    url <- liftIO $ authorize
-                  $ mconcat ["https://api.hipchat.com/v2/room/", r, "/notification" ]
-    req0 <- liftIO $ parseUrl url
-    let note = colorMsg Gray . textMsg . defaultNotification $ msgText
-        req  = req0 { method = "POST"
-                    , requestHeaders = [("Content-Type", "application/json")]
-                    , requestBody = RequestBodyBS . toStrict . encode $ note
-                    }
-    void $ liftIO $ withManager $ \manager -> http req manager
-
-getRooms :: BotAM ()
-getRooms = do
-    response <- liftIO $ authorize "https://api.hipchat.com/v2/room" >>= simpleHttp
-    html $ decodeUtf8 response
-
-sendMessage :: BotAM ()
-sendMessage = do
-    msg <- param "msg"
-    notifyChat msg
-    html $ "Sending message: " <> msg
-
-handleHook :: BotAM ()
-handleHook  = do
-    pre <- lift $ asks prefix
-    reqBody <- body
-    let botCommand = do
-            event <- decode reqBody :: Maybe MessageEvent
-            parseMsg (T.pack pre) . eventMsg $ event
-    case botCommand of
-        Just command -> do
-            result <- liftIO $ runPlugin plugins command
-            notifyChat result
-        Nothing -> return ()
-
-plugins :: Plugin
-plugins = dispatch $
-    [ ("echo", echoP)
-    , ("reverse", reverseP)
-    ]
-
 --------------------------------------------------------------------------------
 app :: AppParams -> IO ()
 app ps@(AppParams {port}) = scottyT port readParams readParams routes
@@ -112,4 +64,72 @@ routes = do
     get "/rooms" getRooms
     get "/send/:msg" sendMessage
     post "/hook" handleHook
+
+plugins :: Plugin
+plugins = dispatch $
+    [ ("echo", echoP)
+    , ("reverse", reverseP)
+    ]
+
+--------------------------------------------------------------------------------
+-- Route Handlers
+
+getRooms :: BotAM ()
+getRooms = do
+    response <- simpleHttp =<< authorize "https://api.hipchat.com/v2/room"
+    html $ decodeUtf8 response
+
+sendMessage :: BotAM ()
+sendMessage = do
+    msg <- param "msg"
+    notifyChat msg
+    html $ "Sending message: " <> msg
+
+handleHook :: BotAM ()
+handleHook  = do
+    pre <- askPrefix
+    reqBody <- body
+    let botCommand = do
+            event <- decode reqBody :: Maybe MessageEvent
+            parseMsg (T.pack pre) . eventMsg $ event
+    case botCommand of
+        Just command -> do
+            result <- liftIO $ runPlugin plugins command
+            notifyChat result
+        Nothing -> return ()
+
+--------------------------------------------------------------------------------
+-- Utilities
+
+notifyChat :: T.Text -> BotAM ()
+notifyChat msgText = do
+    req <- mkNotifyRequest msgText =<< notificationUrl =<< askRoom
+    void . liftIO . withManager . http $ req
+
+mkNotifyRequest :: T.Text -> String -> BotAM Request
+mkNotifyRequest msgText url = fmap (notifyRequest msgText) (liftIO $ parseUrl url)
+
+notifyRequest :: T.Text -> Request -> Request
+notifyRequest msg req =
+    req { method = "POST"
+        , requestHeaders = [("Content-Type", "application/json")]
+        , requestBody = RequestBodyBS . toStrict . encode $ notification
+        }
+  where
+    notification = colorMsg Gray . textMsg . defaultNotification $ msg
+
+authorize :: String -> BotAM String
+authorize url = do
+    auth_token <- liftIO $ getEnv "AUTH_TOKEN"
+    return $ mconcat [url, "?auth_token=", auth_token]
+
+notificationUrl :: String -> BotAM String
+notificationUrl room =
+    authorize $ mconcat ["https://api.hipchat.com/v2/room/", room, "/notification" ]
+
+askRoom :: BotAM String
+askRoom = lift $ asks room
+
+askPrefix :: BotAM String
+askPrefix = lift $ asks prefix
 
