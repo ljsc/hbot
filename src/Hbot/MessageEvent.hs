@@ -114,7 +114,7 @@ instance FromJSON Room where
   parseJSON _ = mzero
 
 data Mention = Mention {
-  mentionId :: String
+  mentionId :: Int
 , mentionLinks :: Links
 , mentionName :: String
 , mentionFullName :: String
