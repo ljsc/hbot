@@ -33,7 +33,7 @@ import Text.Parsec.Text.Lazy
 data BotCommand = BotCommand
     { pluginName :: Text
     , messageText :: Text
-    } deriving (Show)
+    } deriving (Show, Eq)
 
 parseMsg :: Text -> Text -> Maybe BotCommand
 parseMsg p t =
