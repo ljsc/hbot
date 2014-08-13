@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Hbot by ljsc</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Hbot</h1>
+        <h2>A simple Haskell chat bot for Hipchat</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/ljsc/hbot/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/ljsc/hbot/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/ljsc/hbot" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h1>
+<a name="hbot" class="anchor" href="#hbot"><span class="octicon octicon-link"></span></a>hbot</h1>
+
+<p>A simple Haskell chat bot for Hipchat.</p>
+
+<h2>
+<a name="running" class="anchor" href="#running"><span class="octicon octicon-link"></span></a>Running</h2>
+
+<p>To hack on hbot and run in development it's best to use a cabal sandbox. Make
+sure that you have an up to date Cabal, and then:</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ </span>cabal sandbox init
+<span class="nv">$ </span>cabal install
+</pre></div>
+
+<p>To run hbot you need to tell it the OAuth2 token for connecting to the Hipchat
+API.</p>
+
+<div class="highlight highlight-bash"><pre><span class="nv">$ AUTH_TOKEN</span><span class="o">=</span><span class="s2">"abc123xyz"</span> <span class="nv">ROOM</span><span class="o">=</span><span class="s2">"my-room"</span> <span class="nv">PORT</span><span class="o">=</span><span class="m">3000</span> cabal run
+</pre></div>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
