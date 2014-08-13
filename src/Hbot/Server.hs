@@ -41,6 +41,7 @@ import           Web.Scotty.Trans
 import           Hbot.ChatNotification
 import           Hbot.MessageEvent         ( MessageEvent, eventMsg )
 import           Hbot.Plugins
+import           Hbot.Plugins.Whoami       ( whoami )
 import           Hbot.MsgParser
 
 --------------------------------------------------------------------------------
@@ -69,6 +70,7 @@ plugins :: Plugin
 plugins = dispatch $
     [ ("echo", echoP)
     , ("reverse", reverseP)
+    , ("whoami", whoami)
     ]
 
 --------------------------------------------------------------------------------
