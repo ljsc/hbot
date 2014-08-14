@@ -22,22 +22,23 @@ module Hbot.Plugins where
 import Data.Monoid ((<>))
 import qualified Data.Text.Lazy as T
 
+import Hbot.MessageEvent
 import Hbot.MsgParser
 
-newtype Plugin = Plugin { runPlugin :: BotCommand -> IO T.Text }
+newtype Plugin = Plugin { runPlugin :: (BotCommand, MessageEvent) -> IO T.Text }
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
-dispatch table = Plugin $ \command ->
-    let d []                                               = listCommands table
-        d ((name, plugin):rs) | name == pluginName command = runPlugin plugin command
-                              | otherwise                  = d rs
+dispatch table = Plugin $ \input@(command, _) ->
+    let d []                                                 = listCommands table
+        d ((cname, plugin):rs) | cname == pluginName command = runPlugin plugin input
+                               | otherwise                   = d rs
     in d table
 
 listCommands :: [(T.Text, Plugin)] -> IO T.Text
 listCommands table = return . ("Available commands: " <>) . T.intercalate ", " $ map fst table
 
 textPlugin :: (T.Text -> T.Text) -> Plugin
-textPlugin f = Plugin $ \command -> return $ f (messageText command)
+textPlugin f = Plugin $ \(command, _) -> return $ f (messageText command)
 
 echoP :: Plugin
 echoP = textPlugin id

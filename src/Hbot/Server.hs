@@ -91,12 +91,13 @@ handleHook :: BotAM ()
 handleHook  = do
     pre <- askPrefix
     reqBody <- body
-    let botCommand = do
+    let maybeInput = do
             event <- decode reqBody :: Maybe MessageEvent
-            parseMsg (T.pack pre) . eventMsg $ event
-    case botCommand of
-        Just command -> do
-            result <- liftIO $ runPlugin plugins command
+            command <- parseMsg (T.pack pre) . eventMsg $ event
+            return (command, event)
+    case maybeInput of
+        Just input -> do
+            result <- liftIO $ runPlugin plugins input
             notifyChat result
         Nothing -> return ()
 

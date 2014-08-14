@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -19,8 +20,17 @@
 
 module Hbot.Plugins.Whoami where
 
+import qualified Data.Text.Lazy as T
+
+import Hbot.MessageEvent
 import Hbot.Plugins
 
 whoami :: Plugin
-whoami = Plugin $ \_command -> return "Somebody"
+whoami = Plugin $ \(_, event) ->
+    return (T.pack $ displayFrom ( from . message . eventItem $ event))
 
+displayFrom :: From -> String
+displayFrom FromNull               = "Hell if I know"
+displayFrom (FromString s)         = s ++ ", of course."
+displayFrom (FromObject (FO {..})) =
+    concat [ "You are ", fromFullName, ", better known as \"", fromMentionName, "\""]
