@@ -22,4 +22,4 @@ module Hbot.Plugins.Wakeup where
 import Hbot.Plugins
 
 wakeup :: Plugin
-wakeup = Plugin $ \_command -> return "I'm up! I'm up!"
+wakeup = textPlugin $ const "I'm up! I'm up!"
