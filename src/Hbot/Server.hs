@@ -68,10 +68,11 @@ routes = do
 
 plugins :: Plugin
 plugins = dispatch $
-    [ ("echo", echoP)
-    , ("reverse", reverseP)
-    , ("whoami", whoami)
-    , ("wakeup", wakeup)
+    [ ("contrib" , contrib)
+    , ("echo"    , echoP)
+    , ("reverse" , reverseP)
+    , ("whoami"  , whoami)
+    , ("wakeup"  , wakeup)
     ]
 
 --------------------------------------------------------------------------------

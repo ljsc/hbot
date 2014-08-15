@@ -24,6 +24,7 @@ import qualified Data.Text.Lazy as T
 
 import Hbot.MessageEvent
 import Hbot.MsgParser
+import Paths_hbot (getDataFileName)
 
 newtype Plugin = Plugin { runPlugin :: (BotCommand, MessageEvent) -> IO T.Text }
 
@@ -48,3 +49,10 @@ reverseP = textPlugin T.reverse
 
 wakeup :: Plugin
 wakeup = textPlugin $ const "I'm up! I'm up!"
+
+contrib :: Plugin
+contrib = Plugin $ \_ -> do
+    authorsFile <- getDataFileName "AUTHORS"
+    authors <- readFile authorsFile
+    return $ T.pack authors
+
