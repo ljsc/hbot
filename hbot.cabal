@@ -33,7 +33,6 @@ library
                        Hbot.MsgParser,
                        Hbot.Plugins,
                        Hbot.Plugins.Whoami,
-                       Hbot.Plugins.Wakeup,
                        Hbot.Server
 
 executable hbot

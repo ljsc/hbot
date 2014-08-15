@@ -46,3 +46,5 @@ echoP = textPlugin id
 reverseP :: Plugin
 reverseP = textPlugin T.reverse
 
+wakeup :: Plugin
+wakeup = textPlugin $ const "I'm up! I'm up!"

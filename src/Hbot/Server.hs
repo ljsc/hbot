@@ -41,7 +41,6 @@ import           Hbot.ChatNotification
 import           Hbot.MessageEvent         ( MessageEvent, eventMsg )
 import           Hbot.Plugins
 import           Hbot.Plugins.Whoami       ( whoami )
-import           Hbot.Plugins.Wakeup       ( wakeup )
 import           Hbot.MsgParser
 
 --------------------------------------------------------------------------------
