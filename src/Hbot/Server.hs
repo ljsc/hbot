@@ -34,7 +34,6 @@ import           Network.HTTP.Conduit      ( simpleHttp, http, parseUrl, method
                                            , requestBody, requestHeaders
                                            , withManager
                                            , Request, RequestBody(RequestBodyBS) )
-import           System.Environment        ( getEnv )
 import           Web.Scotty.Trans
 
 --------------------------------------------------------------------------------
@@ -50,6 +49,7 @@ data AppParams = AppParams
     { port   :: !Int    -- port to run http server on
     , room   :: !String -- hipchat room for bot to hangout in
     , prefix :: !String -- line prefix for messages bot should respond to
+    , token  :: !String -- api key for hipchat
     }
 
 type BotSM = ScottyT T.Text (ReaderT AppParams IO)
@@ -125,7 +125,7 @@ notifyRequest msg req =
 
 authorize :: String -> BotAM String
 authorize url = do
-    auth_token <- liftIO $ getEnv "AUTH_TOKEN"
+    auth_token <- askToken
     return $ mconcat [url, "?auth_token=", auth_token]
 
 notificationUrl :: String -> BotAM String
@@ -138,3 +138,5 @@ askRoom = lift $ asks room
 askPrefix :: BotAM String
 askPrefix = lift $ asks prefix
 
+askToken :: BotAM String
+askToken = lift $ asks token

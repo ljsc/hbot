@@ -30,4 +30,5 @@ main = app =<< ps
     ps = AppParams <$> fmap read (getEnv "PORT")
                    <*> getEnv "ROOM"
                    <*> getEnv "PREFIX"
+                   <*> getEnv "AUTH_TOKEN"
 
