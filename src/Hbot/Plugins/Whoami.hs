@@ -26,8 +26,10 @@ import Hbot.MessageEvent
 import Hbot.Plugins
 
 whoami :: Plugin
-whoami = Plugin $ \(_, event) ->
-    return (T.pack $ displayFrom ( from . message . eventItem $ event))
+whoami = Plugin { runPlugin = \(_, event) ->
+                      return (T.pack $ displayFrom ( from . message . eventItem $ event))
+                , helpText = "Show information about message sender."
+                }
 
 displayFrom :: From -> String
 displayFrom FromNull               = "Hell if I know"

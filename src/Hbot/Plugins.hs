@@ -26,33 +26,44 @@ import Hbot.MessageEvent
 import Hbot.MsgParser
 import Paths_hbot (getDataFileName)
 
-newtype Plugin = Plugin { runPlugin :: (BotCommand, MessageEvent) -> IO T.Text }
+data Plugin = Plugin {
+    runPlugin :: (BotCommand, MessageEvent) -> IO T.Text
+  , helpText  :: T.Text
+}
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
-dispatch table = Plugin $ \input@(command, _) ->
-    let d []                                                 = listCommands table
-        d ((cname, plugin):rs) | cname == pluginName command = runPlugin plugin input
-                               | otherwise                   = d rs
-    in d table
+dispatch table = Plugin
+    { runPlugin = \input@(command, _) ->
+        let d []                                                 = listCommands table
+            d ((cname, plugin):rs) | cname == pluginName command = runPlugin plugin input
+                                   | otherwise                   = d rs
+        in d table
+    , helpText = "Show available hbot commands"
+    }
 
 listCommands :: [(T.Text, Plugin)] -> IO T.Text
 listCommands table = return . ("Available commands: " <>) . T.intercalate ", " $ map fst table
 
-textPlugin :: (T.Text -> T.Text) -> Plugin
-textPlugin f = Plugin $ \(command, _) -> return $ f (messageText command)
+textPlugin :: T.Text -> (T.Text -> T.Text) -> Plugin
+textPlugin help f = Plugin { runPlugin = \(command, _) -> return $ f (messageText command)
+                           , helpText  = help
+                           }
 
 echoP :: Plugin
-echoP = textPlugin id
+echoP = textPlugin "Outputs the input." id
 
 reverseP :: Plugin
-reverseP = textPlugin T.reverse
+reverseP = textPlugin "Print out the reverse of the input string." T.reverse
 
 wakeup :: Plugin
-wakeup = textPlugin $ const "I'm up! I'm up!"
+wakeup = textPlugin "Make hbot wake up from its Heroku nap." $ const "I'm up! I'm up!"
 
 contrib :: Plugin
-contrib = Plugin $ \_ -> do
-    authorsFile <- getDataFileName "AUTHORS"
-    authors <- readFile authorsFile
-    return $ T.pack authors
+contrib = Plugin
+    { runPlugin = \_ -> do
+          authorsFile <- getDataFileName "AUTHORS"
+          authors <- readFile authorsFile
+          return $ T.pack authors
+    , helpText = "List contributors to hbot."
+    }
 
