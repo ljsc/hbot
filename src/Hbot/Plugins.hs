@@ -19,12 +19,13 @@
 
 module Hbot.Plugins where
 
-import Data.Monoid ((<>))
-import qualified Data.Text.Lazy as T
+import Data.Monoid                 ((<>))
+import qualified Data.Text.Lazy    as T
+import Data.List                   (sort)
 
 import Hbot.MessageEvent
 import Hbot.MsgParser
-import Paths_hbot (getDataFileName)
+import Paths_hbot                  (getDataFileName)
 
 data Plugin = Plugin {
     runPlugin :: (BotCommand, MessageEvent) -> IO T.Text
@@ -42,7 +43,7 @@ dispatch table = Plugin
     }
 
 listCommands :: [(T.Text, Plugin)] -> IO T.Text
-listCommands table = return . ("Available commands: " <>) . T.intercalate ", " $ map fst table
+listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
 
 textPlugin :: T.Text -> (T.Text -> T.Text) -> Plugin
 textPlugin help f = Plugin { runPlugin = \(command, _) -> return $ f (messageText command)
