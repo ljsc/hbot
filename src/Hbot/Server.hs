@@ -63,7 +63,6 @@ routes :: BotSM ()
 routes = do
     get "/" $ html "This is hbot!"
     get "/rooms" getRooms
-    get "/send/:msg" sendMessage
     post "/hook" handleHook
 
 plugins :: Plugin
