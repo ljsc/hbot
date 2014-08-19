@@ -98,7 +98,7 @@ handleHook  = do
             return (command, event)
     case maybeInput of
         Just input -> do
-            result <- liftIO $ runPlugin plugins input
+            result <- liftIO . runPlugin plugins $ input
             notifyChat result
         Nothing -> return ()
 

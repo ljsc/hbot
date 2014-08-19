@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -19,7 +20,7 @@
 
 module Hbot.Plugins where
 
-import Data.Monoid                 ((<>))
+import Data.Monoid                 ((<>), Endo(..))
 import qualified Data.Text.Lazy    as T
 import Data.List                   (sort)
 
@@ -29,17 +30,32 @@ import Paths_hbot                  (getDataFileName)
 
 type PluginInput = (BotCommand, MessageEvent)
 
+class Pluggable p where
+    plug :: p -> TextAction
+
+newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
+
+instance Pluggable TextAction where
+    plug = id
+
+instance Pluggable (Endo T.Text) where
+    plug (Endo f) = TextAction $ \(command, _) -> (return . f . messageText $ command)
+
 data Plugin = Plugin {
-    runPlugin :: PluginInput -> IO T.Text
-  , helpText  :: T.Text
+    pluginHandler :: TextAction
+  , helpText      :: T.Text
 }
+
+runPlugin :: Plugin -> PluginInput -> IO T.Text
+runPlugin = runTextAction . pluginHandler
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
 dispatch table = Plugin
-    { runPlugin = \input@(command, _) ->
-        let d []                                                 = listCommands table
-            d ((cname, plugin):rs) | cname == pluginName command = runPlugin plugin input
-                                   | otherwise                   = d rs
+    { pluginHandler = TextAction $ \input@(command, _) ->
+        let d []                              = listCommands table
+            d ((cname, plugin):rs)
+                | cname == pluginName command = runPlugin plugin input
+                | otherwise                   = d rs
         in d table
     , helpText = "Show available hbot commands"
     }
@@ -48,8 +64,8 @@ listCommands :: [(T.Text, Plugin)] -> IO T.Text
 listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
 
 textPlugin :: T.Text -> (T.Text -> T.Text) -> Plugin
-textPlugin help f = Plugin { runPlugin = \(command, _) -> return $ f (messageText command)
-                           , helpText  = help
+textPlugin help f = Plugin { pluginHandler = plug . Endo $ f
+                           , helpText      = help
                            }
 
 echoP :: Plugin
@@ -63,7 +79,7 @@ wakeup = textPlugin "Make hbot wake up from its Heroku nap." $ const "I'm up! I'
 
 contrib :: Plugin
 contrib = Plugin
-    { runPlugin = \_ -> do
+    { pluginHandler = TextAction $ \_ -> do
           authorsFile <- getDataFileName "AUTHORS"
           authors <- readFile authorsFile
           return $ T.pack authors
