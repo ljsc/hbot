@@ -27,8 +27,10 @@ import Hbot.MessageEvent
 import Hbot.MsgParser
 import Paths_hbot                  (getDataFileName)
 
+type PluginInput = (BotCommand, MessageEvent)
+
 data Plugin = Plugin {
-    runPlugin :: (BotCommand, MessageEvent) -> IO T.Text
+    runPlugin :: PluginInput -> IO T.Text
   , helpText  :: T.Text
 }
 
