@@ -38,7 +38,7 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 instance Pluggable TextAction where
     plug = id
 
-instance Pluggable (Endo T.Text) where
+instance Pluggable (Endo T.Text) where -- Perhaps should just make a new monomorphic type
     plug (Endo f) = TextAction $ \(command, _) -> (return . f . messageText $ command)
 
 data Plugin = Plugin {
@@ -49,40 +49,35 @@ data Plugin = Plugin {
 runPlugin :: Plugin -> PluginInput -> IO T.Text
 runPlugin = runTextAction . pluginHandler
 
+makePlugin :: Pluggable p => p -> T.Text -> Plugin
+makePlugin p h = Plugin (plug p) h
+
 dispatch :: [(T.Text, Plugin)] -> Plugin
-dispatch table = Plugin
-    { pluginHandler = TextAction $ \input@(command, _) ->
-        let d []                              = listCommands table
+dispatch table = makePlugin (TextAction handler) "Show available hbot commands"
+  where
+    handler input@(command, _) = d table
+      where d []                              = listCommands table
             d ((cname, plugin):rs)
                 | cname == pluginName command = runPlugin plugin input
                 | otherwise                   = d rs
-        in d table
-    , helpText = "Show available hbot commands"
-    }
-
-listCommands :: [(T.Text, Plugin)] -> IO T.Text
-listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
-
-textPlugin :: T.Text -> (T.Text -> T.Text) -> Plugin
-textPlugin help f = Plugin { pluginHandler = plug . Endo $ f
-                           , helpText      = help
-                           }
+    listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
 
 echoP :: Plugin
-echoP = textPlugin "Outputs the input." id
+echoP = makePlugin handler  "Outputs the input."
+  where handler = Endo id :: Endo T.Text
 
 reverseP :: Plugin
-reverseP = textPlugin "Print out the reverse of the input string." T.reverse
+reverseP = makePlugin handler "Print out the reverse of the input string."
+  where handler = Endo T.reverse :: Endo T.Text
 
 wakeup :: Plugin
-wakeup = textPlugin "Make hbot wake up from its Heroku nap." $ const "I'm up! I'm up!"
+wakeup = makePlugin handler "Make hbot wake up from its Heroku nap."
+  where handler = Endo . const $ "I'm up! I'm up!" :: Endo T.Text
 
 contrib :: Plugin
-contrib = Plugin
-    { pluginHandler = TextAction $ \_ -> do
+contrib = makePlugin handler "List contributors to hbot."
+  where handler = TextAction $ \_ -> do
           authorsFile <- getDataFileName "AUTHORS"
           authors <- readFile authorsFile
           return $ T.pack authors
-    , helpText = "List contributors to hbot."
-    }
 
