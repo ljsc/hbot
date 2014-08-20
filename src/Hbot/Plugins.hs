@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -20,7 +19,7 @@
 
 module Hbot.Plugins where
 
-import Data.Monoid                 ((<>), Endo(..))
+import Data.Monoid                 ((<>))
 import qualified Data.Text.Lazy    as T
 import Data.List                   (sort)
 
@@ -38,22 +37,24 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 instance Pluggable TextAction where
     plug = id
 
-instance Pluggable (Endo T.Text) where -- Perhaps should just make a new monomorphic type
-    plug (Endo f) = TextAction $ \(command, _) -> (return . f . messageText $ command)
+newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
+
+instance Pluggable TextPure where
+    plug f = TextAction $ \(command, _) -> (return . runTextPure f . messageText $ command)
 
 data Plugin = Plugin {
-    pluginHandler :: TextAction
-  , helpText      :: T.Text
+    helpText      :: T.Text
+  , pluginHandler :: TextAction
 }
 
 runPlugin :: Plugin -> PluginInput -> IO T.Text
 runPlugin = runTextAction . pluginHandler
 
-makePlugin :: Pluggable p => p -> T.Text -> Plugin
-makePlugin p h = Plugin (plug p) h
+makePlugin :: Pluggable p => T.Text -> p -> Plugin
+makePlugin h p = Plugin h (plug p)
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
-dispatch table = makePlugin (TextAction handler) "Show available hbot commands"
+dispatch table = makePlugin "Show available hbot commands" (TextAction handler)
   where
     handler input@(command, _) = d table
       where d []                              = listCommands table
@@ -63,21 +64,17 @@ dispatch table = makePlugin (TextAction handler) "Show available hbot commands"
     listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
 
 echoP :: Plugin
-echoP = makePlugin handler  "Outputs the input."
-  where handler = Endo id :: Endo T.Text
+echoP = makePlugin "Outputs the input." (TextPure id)
 
 reverseP :: Plugin
-reverseP = makePlugin handler "Print out the reverse of the input string."
-  where handler = Endo T.reverse :: Endo T.Text
+reverseP = makePlugin "Print out the reverse of the input string." (TextPure T.reverse)
 
 wakeup :: Plugin
-wakeup = makePlugin handler "Make hbot wake up from its Heroku nap."
-  where handler = Endo . const $ "I'm up! I'm up!" :: Endo T.Text
+wakeup = makePlugin "Make hbot wake up from its Heroku nap." . TextPure . const $ "I'm up! I'm up!"
 
 contrib :: Plugin
-contrib = makePlugin handler "List contributors to hbot."
-  where handler = TextAction $ \_ -> do
-          authorsFile <- getDataFileName "AUTHORS"
-          authors <- readFile authorsFile
-          return $ T.pack authors
+contrib = makePlugin "List contributors to hbot." . TextAction $ \_ -> do
+              authorsFile <- getDataFileName "AUTHORS"
+              authors <- readFile authorsFile
+              return $ T.pack authors
 
