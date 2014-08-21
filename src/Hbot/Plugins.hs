@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-
     hbot - a simple Haskell chat bot for Hipchat
     Copyright (C) 2014 Louis J. Scoras
@@ -42,19 +43,16 @@ newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
 instance Pluggable TextPure where
     plug f = TextAction $ \(command, _) -> (return . runTextPure f . messageText $ command)
 
-data Plugin = Plugin {
+data Plugin = forall p . Pluggable p => Plugin {
     helpText      :: T.Text
-  , pluginHandler :: TextAction
+  , pluginHandler :: p
 }
 
 runPlugin :: Plugin -> PluginInput -> IO T.Text
-runPlugin = runTextAction . pluginHandler
-
-makePlugin :: Pluggable p => T.Text -> p -> Plugin
-makePlugin h p = Plugin h (plug p)
+runPlugin (Plugin {pluginHandler=handler}) = runTextAction $ plug handler
 
 dispatch :: [(T.Text, Plugin)] -> Plugin
-dispatch table = makePlugin "Show available hbot commands" (TextAction handler)
+dispatch table = Plugin "Show available hbot commands" (TextAction handler)
   where
     handler input@(command, _) = d table
       where d []                              = listCommands table
@@ -64,17 +62,17 @@ dispatch table = makePlugin "Show available hbot commands" (TextAction handler)
     listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
 
 echoP :: Plugin
-echoP = makePlugin "Outputs the input." (TextPure id)
+echoP = Plugin "Outputs the input." (TextPure id)
 
 reverseP :: Plugin
-reverseP = makePlugin "Print out the reverse of the input string." (TextPure T.reverse)
+reverseP = Plugin "Print out the reverse of the input string." (TextPure T.reverse)
 
 wakeup :: Plugin
-wakeup = makePlugin "Make hbot wake up from its Heroku nap." . TextPure . const $ "I'm up! I'm up!"
+wakeup = Plugin "Make hbot wake up from its Heroku nap." . TextPure . const $ "I'm up! I'm up!"
 
 contrib :: Plugin
-contrib = makePlugin "List contributors to hbot." . TextAction $ \_ -> do
-              authorsFile <- getDataFileName "AUTHORS"
-              authors <- readFile authorsFile
-              return $ T.pack authors
+contrib = Plugin "List contributors to hbot." . TextAction $ \_ -> do
+    authorsFile <- getDataFileName "AUTHORS"
+    authors <- readFile authorsFile
+    return $ T.pack authors
 

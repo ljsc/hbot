@@ -26,7 +26,7 @@ import Hbot.MessageEvent
 import Hbot.Plugins
 
 whoami :: Plugin
-whoami = makePlugin "Show information about message sender." . TextAction $ \(_, event) ->
+whoami = Plugin "Show information about message sender." . TextAction $ \(_, event) ->
              return (T.pack $ displayFrom ( from . message . eventItem $ event))
 
 displayFrom :: From -> String
