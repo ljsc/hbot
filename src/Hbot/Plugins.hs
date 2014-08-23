@@ -20,13 +20,15 @@
 
 module Hbot.Plugins where
 
-import Data.Monoid                 ((<>))
-import qualified Data.Text.Lazy    as T
-import Data.List                   (sort)
+import Data.Monoid                     ((<>))
+import qualified Data.Text.Lazy        as T
+import Data.List                       (sort)
+import Text.Blaze.Html                 (Html)
+import Text.Blaze.Html.Renderer.Text   (renderHtml)
 
 import Hbot.MessageEvent
 import Hbot.MsgParser
-import Paths_hbot                  (getDataFileName)
+import Paths_hbot                      (getDataFileName)
 
 type PluginInput = (BotCommand, MessageEvent)
 
@@ -37,6 +39,11 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 
 instance Pluggable TextAction where
     plug = id
+
+newtype HtmlAction = HtmlAction { runHtmlAction :: PluginInput -> IO Html }
+
+instance Pluggable HtmlAction where
+    plug action = TextAction $ \input -> fmap renderHtml (runHtmlAction action input)
 
 newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
 
