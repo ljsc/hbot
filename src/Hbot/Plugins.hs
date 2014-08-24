@@ -30,11 +30,18 @@ import Hbot.MessageEvent
 import Hbot.MsgParser
 import Paths_hbot                      (getDataFileName)
 
+-- | Input to plugins consists of the parsed BotCommand, as well as the entire JSON
+-- message from the Hipchat API.
 type PluginInput = (BotCommand, MessageEvent)
 
+-- | Pluggable types are those that can be used as plugin handlers, and should be convertable
+-- to functions from PluginInput -> IO T.Text
 class Pluggable p where
-    plug :: p -> TextAction
+    plug :: p -> TextAction -- ^ Convert the handler to the canonical TextAction format.
 
+-- | TextAction is the standard format for plugin handlers. It takes the
+-- PluginInput and preforms some action in IO and returns the text that should
+-- be the message body for the Hipchat room notification.
 newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 
 instance Pluggable TextAction where
