@@ -44,14 +44,17 @@ import           Hbot.Plugins.Whoami       ( whoami )
 import           Hbot.MsgParser
 
 --------------------------------------------------------------------------------
+-- | ENV parameters required to run the hbot server
 data AppParams = AppParams
-    { port   :: !Int    -- port to run http server on
-    , room   :: !String -- hipchat room for bot to hangout in
-    , prefix :: !String -- line prefix for messages bot should respond to
-    , token  :: !String -- api key for hipchat
+    { port   :: !Int    -- ^ port to run http server on
+    , room   :: !String -- ^ hipchat room for bot to hangout in
+    , prefix :: !String -- ^ line prefix for messages bot should respond to
+    , token  :: !String -- ^ api key for hipchat
     }
 
+-- | Application monad for running Scotty w/ AppParams reader access
 type BotSM = ScottyT T.Text (ReaderT AppParams IO)
+-- | Action monad for running http handlers w/ AppParams reader access
 type BotAM = ActionT T.Text (ReaderT AppParams IO)
 
 --------------------------------------------------------------------------------
