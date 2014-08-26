@@ -58,16 +58,21 @@ type BotSM = ScottyT T.Text (ReaderT AppParams IO)
 type BotAM = ActionT T.Text (ReaderT AppParams IO)
 
 --------------------------------------------------------------------------------
+
+-- | Main application function. Parses the application parameters and runs the
+-- scotty router.
 app :: AppParams -> IO ()
 app ps@(AppParams {port}) = scottyT port readParams readParams routes
   where readParams reader = runReaderT reader ps
 
+-- | Application routes
 routes :: BotSM ()
 routes = do
     get "/" $ html "This is hbot!"
     get "/rooms" getRooms
     post "/hook" handleHook
 
+-- | Keyword to plugin mapping for the server.
 plugins :: Plugin
 plugins = dispatch $
     [ ("contrib" , contrib)
@@ -80,17 +85,23 @@ plugins = dispatch $
 --------------------------------------------------------------------------------
 -- Route Handlers
 
+-- | Displays a list of rooms available to the bot account.
 getRooms :: BotAM ()
 getRooms = do
     response <- simpleHttp =<< authorize "https://api.hipchat.com/v2/room"
     html $ decodeUtf8 response
 
+-- | Send a message notification directly to the room.
 sendMessage :: BotAM ()
 sendMessage = do
     msg <- param "msg"
     notifyChat msg
     html $ "Sending message: " <> msg
 
+-- | Handles the webhook fired by the Hipchat API whenever a message matching
+-- a given regex is detected within a room. Hbot will run the corresponding
+-- plugin to handle the input if the message matches a given keyword in the
+-- dispatch table.
 handleHook :: BotAM ()
 handleHook  = do
     pre <- askPrefix
