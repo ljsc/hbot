@@ -119,14 +119,20 @@ handleHook  = do
 --------------------------------------------------------------------------------
 -- Utilities
 
+-- | Send a chat notification with the given message body as the bot to the configured room.
 notifyChat :: T.Text -> BotAM ()
 notifyChat msgText = do
     req <- mkNotifyRequest msgText =<< notificationUrl =<< askRoom
     void . liftIO . withManager . http $ req
 
+-- | Given notification body text and the authorized url to send to, creates
+-- a message notification request for the hipchat API.
 mkNotifyRequest :: T.Text -> String -> BotAM Request
 mkNotifyRequest msgText url = fmap (notifyRequest msgText) (liftIO $ parseUrl url)
 
+-- | Updates a plain conduit request with the correct headers to send to the
+-- hipchat API. Using the provided Text parameter, this function creates
+-- a notification as text witht the default gray background.
 notifyRequest :: T.Text -> Request -> Request
 notifyRequest msg req =
     req { method = "POST"
@@ -136,20 +142,29 @@ notifyRequest msg req =
   where
     notification = colorMsg Gray . textMsg . defaultNotification $ msg
 
+-- | Adds the auth_token to an API url.
 authorize :: String -> BotAM String
 authorize url = do
     auth_token <- askToken
     return $ mconcat [url, "?auth_token=", auth_token]
 
+-- | Compute the correct room URI from the room name, and authorize.
 notificationUrl :: String -> BotAM String
 notificationUrl room =
     authorize $ mconcat ["https://api.hipchat.com/v2/room/", room, "/notification" ]
 
+-- | Get the value of the ROOM env variable from the Reader environment.
 askRoom :: BotAM String
 askRoom = lift $ asks room
 
+-- | Get the value of the PREFIX env variable from the Reader environment. This
+-- value should be at the start of all commands intended for handling by hbot.
 askPrefix :: BotAM String
 askPrefix = lift $ asks prefix
 
+-- | Get the value of the TOKEN env variable from the Reader environment. This
+-- string will be used by the authorize function to create authenticated
+-- requests.
 askToken :: BotAM String
 askToken = lift $ asks token
+
