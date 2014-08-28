@@ -47,11 +47,14 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 instance Pluggable TextAction where
     plug = id
 
+-- | HtmlAction is a plugin that returns an Html markup computation using Blaze
+-- for the message body content.
 newtype HtmlAction = HtmlAction { runHtmlAction :: PluginInput -> IO Html }
 
 instance Pluggable HtmlAction where
     plug action = TextAction $ \input -> fmap renderHtml (runHtmlAction action input)
 
+-- | TextPure is a plugin that is a simple function from text to text.
 newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
 
 instance Pluggable TextPure where
