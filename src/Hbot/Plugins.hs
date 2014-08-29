@@ -60,6 +60,8 @@ newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
 instance Pluggable TextPure where
     plug f = TextAction $ \(command, _) -> (return . runTextPure f . messageText $ command)
 
+-- | Type for plugins. Must give text for a help description, as well as
+-- a handler that implements the Pluggable typeclass.
 data Plugin = forall p . Pluggable p => Plugin {
     helpText      :: T.Text
   , pluginHandler :: p
