@@ -67,9 +67,14 @@ data Plugin = forall p . Pluggable p => Plugin {
   , pluginHandler :: p
 }
 
+-- | Convert plugin to standard format (TextAction) for a handler.
 runPlugin :: Plugin -> PluginInput -> IO T.Text
 runPlugin (Plugin {pluginHandler=handler}) = runTextAction $ plug handler
 
+-- | Create a plugin from multiple plugin. Takes a parameter as a list of pairs
+-- of keywords to actual plugins. As a plugin, it looks up the child plugin
+-- from the table based on keyword and runs it if found. If no plugin is found
+-- it calls listCommands
 dispatch :: [(T.Text, Plugin)] -> Plugin
 dispatch table = Plugin "Show available hbot commands" (TextAction handler)
   where
