@@ -85,15 +85,19 @@ dispatch table = Plugin "Show available hbot commands" (TextAction handler)
                 | otherwise                   = d rs
     listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
 
+-- | Plugin which prints exactly its own input.
 echoP :: Plugin
 echoP = Plugin "Outputs the input." (TextPure id)
 
+-- | Plugin which returns its own input reversed.
 reverseP :: Plugin
 reverseP = Plugin "Print out the reverse of the input string." (TextPure T.reverse)
 
+-- | Plugin printing a canned string to say hello after a Heroku nap.
 wakeup :: Plugin
 wakeup = Plugin "Make hbot wake up from its Heroku nap." . TextPure . const $ "I'm up! I'm up!"
 
+-- | Plugin listing contributors to the hbot code.
 contrib :: Plugin
 contrib = Plugin "List contributors to hbot." . TextAction $ \_ -> do
     authorsFile <- getDataFileName "AUTHORS"
