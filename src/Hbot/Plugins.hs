@@ -37,7 +37,8 @@ type PluginInput = (BotCommand, MessageEvent)
 -- | Pluggable types are those that can be used as plugin handlers, and should be convertable
 -- to functions from PluginInput -> IO T.Text
 class Pluggable p where
-    plug :: p -> TextAction -- ^ Convert the handler to the canonical TextAction format.
+    -- | Convert the handler to the canonical TextAction format.
+    plug :: p -> TextAction
 
 -- | TextAction is the standard format for plugin handlers. It takes the
 -- PluginInput and preforms some action in IO and returns the text that should
