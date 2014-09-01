@@ -25,10 +25,13 @@ import qualified Data.Text.Lazy as T
 import Hbot.MessageEvent
 import Hbot.Plugins
 
+-- | Plugin which shows information about the user invoking the plugin
 whoami :: Plugin
 whoami = Plugin "Show information about message sender." . TextAction $ \(_, event) ->
              return (T.pack $ displayFrom ( from . message . eventItem $ event))
 
+-- | Convert from information from the Hipchat api into a text representation
+-- for the response notification.
 displayFrom :: From -> String
 displayFrom FromNull               = "Hell if I know"
 displayFrom (FromString s)         = s ++ ", of course."
