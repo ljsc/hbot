@@ -16,7 +16,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
-
+-- | Functions and data types for sending a chat notification event using the
+-- Hipchat API.
 module Hbot.ChatNotification where
 
 import           Control.Applicative ((<$>))
@@ -25,14 +26,23 @@ import           Data.Char (toLower)
 import           Data.Maybe (catMaybes)
 import qualified Data.Text.Lazy as T
 
+-- | Hipchat allows notifications to have differing background colors. This type
+-- enumerates the possible color values.
 data Color = Yellow | Green | Red | Purple | Gray | Random deriving (Eq, Ord, Enum, Show)
+
+-- | The API allows notifications to be either HTML or Text based. If they are
+-- html based, there is a whitelisted bag of html tags that are allowed: consult
+-- the API for details. For plain text, they will be processed as normal chat
+-- messages are, i.e.: checked for @mentions, etc.
 data MessageFormat = Html | Text deriving (Eq, Ord, Enum, Show)
 
+-- | Represents a JSON request to the api for sending a notification to the
+-- appropriate room.
 data ChatNotification = CN {
-  message :: T.Text
-, color :: Maybe Color
-, notify :: Maybe Bool
-, messageFormat :: Maybe MessageFormat
+  message :: T.Text -- ^ The text data for the message body. Should be plain text or html markup.
+, color :: Maybe Color -- ^ Background color for the message. API defaults it to grey.
+, notify :: Maybe Bool -- ^ Whether to send notifications to users in the room. Defaults false.
+, messageFormat :: Maybe MessageFormat -- ^ Text or HTML. Defaults to text.
 } deriving (Show, Eq)
 
 instance ToJSON Color where
@@ -49,6 +59,8 @@ instance ToJSON ChatNotification where
     , ("message_format".=) . toJSON <$> messageFormat
     ]
 
+-- | Create a new notification with all defaults other than the message body,
+-- supplied as the sole parameter.
 defaultNotification :: T.Text -> ChatNotification
 defaultNotification msg = CN {
   message = msg
@@ -57,12 +69,15 @@ defaultNotification msg = CN {
 , messageFormat = Nothing
 }
 
+-- | Transform the notification to set the message type to Text.
 textMsg :: ChatNotification -> ChatNotification
 textMsg note = note { messageFormat = Just Text }
 
+-- | Transform the notification to set the message type to Html.
 htmlMsg :: ChatNotification -> ChatNotification
 htmlMsg note = note { messageFormat = Just Html }
 
+-- | Transform the notification to set the background color.
 colorMsg :: Color -> ChatNotification -> ChatNotification
 colorMsg c note = note { color = Just c }
 
