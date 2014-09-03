@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
-
+-- | Contributors plugin
 module Hbot.Plugins.Whoami where
 
 import qualified Data.Text.Lazy as T

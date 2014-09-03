@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
+-- | Types and utilities for creating plugins, along with a few examples.
 module Hbot.Plugins where
 
 import Data.Monoid                     ((<>))
