@@ -16,6 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
+-- | Parse messages that are matched by the webhook for room notifications
 module Hbot.MsgParser
     ( parseMsg
     , BotCommand()
@@ -30,31 +31,40 @@ import Text.Parsec
 import Text.Parsec.Text.Lazy
 
 --------------------------------------------------------------------------------
+-- | Represents the command sent to a given hbot plugin.
 data BotCommand = BotCommand
-    { pluginName :: Text
-    , messageText :: Text
+    { pluginName :: Text -- ^ The keyword/name for the plugin to invoke
+    , messageText :: Text -- ^ The text of the message sent to the chat room
     } deriving (Show, Eq)
 
-parseMsg :: Text -> Text -> Maybe BotCommand
+-- | Possibly return a BotCommand based on the given prefix
+parseMsg :: Text -- ^ Prefix matched by the webhook. Stripped by the parser
+         -> Text -- ^ The Text input from the chat room message
+         -> Maybe BotCommand -- ^ Input for the parser
 parseMsg p t =
     case parse (prefixParser p) "" t of
         Left _    -> Nothing
         Right res -> Just res
 
+-- | Top level parser
 prefixParser :: Text -> Parser BotCommand
 prefixParser p =
     BotCommand <$> (skipSpaces *> prefix p *> skipSpaces *> theCommand <* skipSpaces)
                <*> theRest
 
+-- | Remove whitespaces
 skipSpaces :: Parser ()
 skipSpaces = skipMany space
 
+-- | Parser for the given prefix Text
 prefix :: Text -> Parser String
 prefix = string . unpack
 
+-- | Parser for the command/plugin name
 theCommand :: Parser Text
 theCommand = pack <$> many alphaNum
 
+-- | Parser that collects the rest of the input to pass to the plugin
 theRest :: Parser Text
 theRest = pack <$> many anyChar
 
