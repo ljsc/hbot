@@ -18,7 +18,29 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Hbot.Server where
+module Hbot.Server (
+    -- * Application configuration
+    --
+    -- | These definitions let you change the bot parameters to configure for your
+    -- specific setup on hipchat. The AppParams information is fetched from
+    -- environemnt variables, while the routes and plugins setup the mapping for
+    -- the actual useful functionalty to be provided by the bot.
+
+    -- ** Environment
+    AppParams(..),
+    -- ** Server actions
+    routes, plugins,
+
+    -- * Starting the server
+    app,
+
+    -- * Bot actions
+    getRooms, sendMessage, handleHook,
+
+    -- * Utilities
+    notifyChat, mkNotifyRequest, notifyRequest, authorize, notificationUrl,
+    askRoom, askPrefix, askToken
+) where
 
 --------------------------------------------------------------------------------
 import           Control.Monad             ( void )
