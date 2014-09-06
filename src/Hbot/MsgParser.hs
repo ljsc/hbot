@@ -17,12 +17,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 -- | Parse messages that are matched by the webhook for room notifications
-module Hbot.MsgParser
-    ( parseMsg
-    , BotCommand()
-    , pluginName
-    , messageText
-    ) where
+module Hbot.MsgParser (
+    -- * Parsing function
+    parseMsg,
+    -- * Command type
+    BotCommand(),
+    -- * Command acessors
+    pluginName, messageText
+) where
 
 --------------------------------------------------------------------------------
 import Control.Applicative hiding (many, (<|>))
