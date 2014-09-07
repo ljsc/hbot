@@ -19,13 +19,25 @@
 -}
 
 -- | Types and utilities for creating plugins, along with a few examples.
-module Hbot.Plugins where
+module Hbot.Plugins (
+    PluginInput,
+    Pluggable,
+
+    TextAction(..), TextPure,
+    -- HtmlAction,
+
+    Plugin(..), runPlugin,
+
+    dispatch,
+
+    echoP, reverseP, wakeup, contrib
+) where
 
 import Data.Monoid                     ((<>))
 import qualified Data.Text.Lazy        as T
 import Data.List                       (sort)
-import Text.Blaze.Html                 (Html)
-import Text.Blaze.Html.Renderer.Text   (renderHtml)
+--import Text.Blaze.Html                 (Html)
+--import Text.Blaze.Html.Renderer.Text   (renderHtml)
 
 import Hbot.MessageEvent
 import Hbot.MsgParser
@@ -49,12 +61,14 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 instance Pluggable TextAction where
     plug = id
 
+{-
 -- | HtmlAction is a plugin that returns an Html markup computation using Blaze
 -- for the message body content.
 newtype HtmlAction = HtmlAction { runHtmlAction :: PluginInput -> IO Html }
 
 instance Pluggable HtmlAction where
     plug action = TextAction $ \input -> fmap renderHtml (runHtmlAction action input)
+-}
 
 -- | TextPure is a plugin that is a simple function from text to text.
 newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
@@ -65,7 +79,7 @@ instance Pluggable TextPure where
 -- | Type for plugins. Must give text for a help description, as well as
 -- a handler that implements the Pluggable typeclass.
 data Plugin = forall p . Pluggable p => Plugin {
-    helpText      :: T.Text
+    _helpText      :: T.Text
   , pluginHandler :: p
 }
 
