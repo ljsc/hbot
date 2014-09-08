@@ -20,16 +20,21 @@
 
 -- | Types and utilities for creating plugins, along with a few examples.
 module Hbot.Plugins (
+    -- * Plugin input
     PluginInput,
-    Pluggable,
 
+    -- * Plugin handler types
+    Pluggable,
     TextAction(..), TextPure,
     -- HtmlAction,
 
+    -- * Plugin definition and runner
     Plugin(..), runPlugin,
 
+    -- * Utility plugin for mapping
     dispatch,
 
+    -- * Example plugins
     echoP, reverseP, wakeup, contrib
 ) where
 
