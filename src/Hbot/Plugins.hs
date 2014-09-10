@@ -25,8 +25,7 @@ module Hbot.Plugins (
 
     -- * Plugin handler types
     Pluggable,
-    TextAction(..), TextPure,
-    -- HtmlAction,
+    TextAction(..), TextPure(..), HtmlAction(..),
 
     -- * Plugin definition and runner
     Plugin(..), runPlugin,
@@ -41,8 +40,8 @@ module Hbot.Plugins (
 import Data.Monoid                     ((<>))
 import qualified Data.Text.Lazy        as T
 import Data.List                       (sort)
---import Text.Blaze.Html                 (Html)
---import Text.Blaze.Html.Renderer.Text   (renderHtml)
+import Text.Blaze.Html                 (Html)
+import Text.Blaze.Html.Renderer.Text   (renderHtml)
 
 import Hbot.MessageEvent
 import Hbot.MsgParser
@@ -66,14 +65,13 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 instance Pluggable TextAction where
     plug = id
 
-{-
+
 -- | HtmlAction is a plugin that returns an Html markup computation using Blaze
 -- for the message body content.
 newtype HtmlAction = HtmlAction { runHtmlAction :: PluginInput -> IO Html }
 
 instance Pluggable HtmlAction where
     plug action = TextAction $ \input -> fmap renderHtml (runHtmlAction action input)
--}
 
 -- | TextPure is a plugin that is a simple function from text to text.
 newtype TextPure = TextPure { runTextPure :: T.Text -> T.Text }
