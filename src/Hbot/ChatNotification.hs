@@ -18,7 +18,14 @@
 -}
 -- | Functions and data types for sending a chat notification event using the
 -- Hipchat API.
-module Hbot.ChatNotification where
+module Hbot.ChatNotification (
+    Color(..),
+    MessageFormat(..),
+    ChatNotification,
+    message, color, notify, messageFormat,
+    defaultNotification,
+    textMsg, htmlMsg, colorMsg
+) where
 
 import           Control.Applicative ((<$>))
 import           Data.Aeson
