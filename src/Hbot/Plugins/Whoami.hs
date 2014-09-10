@@ -18,7 +18,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 -- | Contributors plugin
-module Hbot.Plugins.Whoami where
+module Hbot.Plugins.Whoami (
+    whoami
+) where
 
 import qualified Data.Text.Lazy as T
 
