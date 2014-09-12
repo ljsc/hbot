@@ -19,11 +19,18 @@
 -- | Functions and data types for sending a chat notification event using the
 -- Hipchat API.
 module Hbot.ChatNotification (
+    -- * Notification types
     Color(..),
     MessageFormat(..),
     ChatNotification,
-    message, color, notify, messageFormat,
+
+    -- * Creating a message
     defaultNotification,
+
+    -- * Record acessors
+    message, color, notify, messageFormat,
+
+    -- * Convenience tranforms
     textMsg, htmlMsg, colorMsg
 ) where
 
