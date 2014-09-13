@@ -17,7 +17,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-module Hbot.MessageEvent where
+module Hbot.MessageEvent (
+    MessageEvent(..), eventMsg,
+    EventItem(..), Message(..), From(..), FromObject(..),
+    Room(..), Mention(..), LinkType(..)
+) where
 
 import           Control.Applicative
 import           Control.Monad
