@@ -18,7 +18,13 @@
 -}
 
 module Hbot.MessageEvent (
-    MessageEvent(..), eventMsg,
+    -- * Main type
+    MessageEvent(..),
+
+    -- * Extract message text sent
+    eventMsg,
+
+    -- * Sub types
     EventItem(..), Message(..), From(..), FromObject(..),
     Room(..), Mention(..), LinkType(..)
 ) where
