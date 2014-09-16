@@ -38,7 +38,10 @@ import           Data.Text.Lazy
 import           Data.Time
 import           System.Locale (defaultTimeLocale)
 
+-- | Alias for urls
 type URL   = String
+
+-- | Type alias for collection of links returned from the server
 type Links = Map LinkType URL
 
 data MessageEvent = MessageEvent {
