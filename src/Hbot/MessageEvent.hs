@@ -44,6 +44,7 @@ type URL   = String
 -- | Type alias for collection of links returned from the server
 type Links = Map LinkType URL
 
+-- | Top level type for the message event webhook.
 data MessageEvent = MessageEvent {
   eventName :: String
 , eventItem :: EventItem
@@ -58,6 +59,7 @@ instance FromJSON MessageEvent where
                                       <*> v .: "webhook_id"
   parseJSON _ = mzero
 
+-- | Type to hold the "item" field in the top level response.
 data EventItem = EventItem {
   message :: Message
 , room :: Room
