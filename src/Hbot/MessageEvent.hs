@@ -69,6 +69,7 @@ instance FromJSON EventItem where
   parseJSON (Object v) = EventItem <$> v .: "message" <*> v .: "room"
   parseJSON _ = mzero
 
+-- | Type for actuall message data. Plugins will get the message text from here.
 data Message = Message {
   date :: UTCTime
 , file :: Maybe String
@@ -78,6 +79,7 @@ data Message = Message {
 , msgText :: Text
 } deriving (Show)
 
+-- Helper to parse date time stamps returned by the API.
 dateWithZone :: Parser Text -> Parser UTCTime
 dateWithZone ps = do
   str <- ps
@@ -94,6 +96,8 @@ instance FromJSON Message where
                                  <*> v .: "message"
   parseJSON _ = mzero
 
+-- | Sum type for from information. We seem to always be getting the object type
+-- back, but acording to the docs, it could be any of these three.
 data From = FromObject FromObject | FromString String | FromNull deriving (Show)
 
 instance FromJSON From where
@@ -102,6 +106,7 @@ instance FromJSON From where
   parseJSON Null         = return FromNull
   parseJSON _            = mzero
 
+-- | Full data on sender. Useful for getting @-mention tags.
 data FromObject = FO {
   objectId :: Int
 , objectLinks :: Links
@@ -116,6 +121,7 @@ instance FromJSON FromObject where
                             <*> v .: "name"
   parseJSON _ = mzero
 
+-- | Type for room information
 data Room = Room {
   roomId :: Int
 , roomLinks :: Links
@@ -128,6 +134,7 @@ instance FromJSON Room where
                               <*> v .: "name"
   parseJSON _ = mzero
 
+-- | Data for any @-mention recpients in the message sent.
 data Mention = Mention {
   mentionId :: Int
 , mentionLinks :: Links
@@ -142,17 +149,22 @@ instance FromJSON Mention where
                                  <*> v .: "name"
   parseJSON _ = mzero
 
+-- | Enum for link types
 data LinkType = InvalidLink | SelfLink | MemberLink | WebhookLink deriving (Show, Eq, Ord)
 
+-- | Returns links, dropping any invalid data that doesn't match the LinkType
+-- enum.
 linksFromObject :: Map String URL -> Links
 linksFromObject = delete InvalidLink . mapKeys parseLinkType
 
+-- | Parse link type text into enum
 parseLinkType :: String -> LinkType
 parseLinkType s | s == "self" = SelfLink
                 | s == "member" = MemberLink
                 | s == "webhook" = WebhookLink
                 | otherwise = InvalidLink
 
+-- | Pulls the message text from the overall message response.
 eventMsg :: MessageEvent -> Text
 eventMsg = msgText . message . eventItem
 
