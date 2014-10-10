@@ -36,6 +36,7 @@ library
                        Hbot.MessageEvent,
                        Hbot.MsgParser,
                        Hbot.Plugins,
+                       Hbot.Plugins.Roller,
                        Hbot.Plugins.Whoami,
                        Hbot.Server,
                        Paths_hbot
