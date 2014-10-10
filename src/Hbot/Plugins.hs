@@ -37,10 +37,10 @@ module Hbot.Plugins (
     echoP, reverseP, wakeup, contrib
 ) where
 
-import Data.Monoid                     ((<>))
 import qualified Data.Text.Lazy        as T
 import Data.List                       (sort)
-import Text.Blaze.Html                 (Html)
+import Text.Blaze.Html                 (Html, toHtml)
+import Text.Blaze.Html5                (h2, ul, li)
 import Text.Blaze.Html.Renderer.Text   (renderHtml)
 
 import Hbot.MessageEvent
@@ -64,7 +64,6 @@ newtype TextAction = TextAction { runTextAction :: PluginInput -> IO T.Text }
 
 instance Pluggable TextAction where
     plug = id
-
 
 -- | HtmlAction is a plugin that returns an Html markup computation using Blaze
 -- for the message body content.
@@ -102,7 +101,10 @@ dispatch table = Plugin "Show available hbot commands" (TextAction handler)
             d ((cname, plugin):rs)
                 | cname == pluginName command = runPlugin plugin input
                 | otherwise                   = d rs
-    listCommands = return . ("Available commands: " <>) . T.intercalate ", " . sort . map fst
+    listCommands pairs = return . renderHtml $ do
+      let cmdNames = sort $ map fst pairs
+      h2 "Available commands: "
+      ul $ mapM_ (li . toHtml) cmdNames
 
 -- | Plugin which prints exactly its own input.
 echoP :: Plugin
